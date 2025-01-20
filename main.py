@@ -1,5 +1,6 @@
 import cv2
 import csv
+import con_arduino
 
 cap = cv2.VideoCapture(0)
 detector = cv2.QRCodeDetector()
@@ -8,6 +9,7 @@ unload = False
 wait_car = False
 exit_car = False
 right_key = None
+ser = con_arduino.initialization('COM4')
 
 with open('spaces.csv', 'r', newline='') as csvfile: # открываем файл с таблицей для чтения
     file = csv.reader(csvfile, delimiter=';', quotechar='|')
@@ -50,6 +52,8 @@ def loading(data):
     min_key = min(key for key, value in table.items() if value == '')  # Нахождение минимальной свободной ячейки
 
     print(f'Номер машины: {data}, Нажмите кнопку для продолжения')
+    con_arduino.post('loading', ser)
+
     while True:
         if cv2.waitKey(1) == ord("q"):
             break
@@ -60,15 +64,16 @@ def loading(data):
 def space_check(data):
     global unload
 
-    if not ('' in table.values()) and not (data[:1] == '1'):  # проверка на наличие в словаре значений None, т.е свободных мест
+    if not ('' in table.values()) and not data.startswith('1'):  # проверка на наличие в словаре значений None, т.е свободных мест
         print('Нет свободных мест!')
 
     else:
-        if (data[:1] == '1' and data[1:] in table.values()) or unload:
+        if (data.startswith('1') and data[1:] in table.values()) or unload:
             # Если qr код у владельца машины начинается на цифру 1, сл. происходит проверка на qr код владельца и наличие его машины в парковке
 
             if not(unload):
                 print(f'Номер машины: {data[1:]}, Процесс выгрузки')
+                con_arduino.post('unloading', ser)
 
                 # вычисление нужной ячейки с учёиом qr кода владельца
 
@@ -77,7 +82,7 @@ def space_check(data):
             else:
                 exiting(data)
 
-        if not (data in table.values()) and data[:1] != '1' and not (unload):
+        if not (data in table.values()) and not(data.startswith('1')) and not (unload):
             loading(data)
 
 
