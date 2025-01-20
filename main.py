@@ -31,7 +31,7 @@ def exiting(data):
     global wait_car
     global exit_car
 
-    if data[:1] == '1':
+    if data.startswith('1'):
         right_key = next(key for key, value in table.items() if value == data[1:])
 
     if data == table.get(right_key):  # Проверка  выехала ли машина
@@ -54,7 +54,11 @@ def loading(data):
     print(f'Номер машины: {data}, Нажмите кнопку для продолжения')
     con_arduino.post('loading', ser)
 
-    while True:
+    while True: # Ожидание нажатия кнопки
+
+        # if con_arduino.get(ser) == 'end_loading':
+        #     break
+
         if cv2.waitKey(1) == ord("q"):
             break
 
