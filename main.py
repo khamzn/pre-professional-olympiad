@@ -1,9 +1,12 @@
 import csv
 import cv2
+import con_arduino
 
 cap = cv2.VideoCapture(0)
 detector = cv2.QRCodeDetector()
+ser = con_arduino.initialization('dev/ttyUSB0')
 wait_car = False
+
 
 def load_table():
     table = {}
@@ -44,23 +47,24 @@ def scan_qr_code():
             break
 
 
-def procces_qr_code(data, table):
+def process_qr_code(data, table):
     global wait_car
     if data in table.values():
-        print('unloading')
+        con_arduino.post('unloading', ser)
 
         right_key = next(key for key, value in table.items() if value == data)
         table[right_key] = ' '
-        print('led is green')
 
         while True:
-
-            if cv2.waitKey(1) & 0xFF == ord('q'):
+            if con_arduino.get(ser) == 'unloading end':
                 break
+
+        con_arduino.post('green',ser)
+
         wait_car = True
 
     elif not(wait_car):
-        print('loading')
+        con_arduino.post('loading', ser)
 
         if ' ' in table.values():
             min_key = min(key for key, value in table.items() if value == ' ')
@@ -71,9 +75,8 @@ def procces_qr_code(data, table):
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
         else:
-            print(table)
             print('нет свободных мест')
-            print('led is red')
+            con_arduino.post('red', ser)
 
     save(table)
 
@@ -82,4 +85,4 @@ table = load_table()
 
 while True:
     data = scan_qr_code()
-    procces_qr_code(data, table)
+    process_qr_code(data, table)
