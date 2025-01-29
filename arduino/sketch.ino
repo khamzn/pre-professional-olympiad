@@ -17,6 +17,13 @@ int buttonState = digitalRead(button);
 int redpinState;
 int greenpinState;
 
+String data;
+int loaded_key;
+int right_key;
+int current_key;
+int min_key;
+
+
 void setup(){
   Serial.begin(9600);
   stepper.setSpeed(1000);
@@ -39,10 +46,13 @@ void loop(){
   }
 
   if (data == "loading"){
+    loaded_key = Serial.readString().toInt();
     loading();
   }
 
   if (data == "unloading"){
+    right_key = Serial.readString().toInt();
+    current_key = Serial.readString().toInt();
     unloading();
   }
 
@@ -55,9 +65,42 @@ void loop(){
     greenpinState = 1;
   }
 
-  digtalWrite(redpin, redpinState);
-  digtalWrite(greenpin, greenpinState);
+  digitalWrite(redpin, redpinState);
+  digitalWrite(greenpin, greenpinState);
 }
+
+
+void motor1_left(){
+  digitalWrite(motor1_A, 1);
+  digitalWrite(motor1_B, 0);
+}
+
+
+void motor1_right(){
+  digitalWrite(motor1_A, 0);
+  digitalWrite(motor1_B, 1);
+}
+
+
+void motor2_left(){
+  digitalWrite(motor2_A, 1);
+  digitalWrite(motor2_B, 0);
+}
+
+
+void motor2_right(){
+  digitalWrite(motor2_A, 0);
+  digitalWrite(motor2_B, 1);
+}
+
+
+void motors_stop(){
+  digitalWrite(motor1_A, 0);
+  digitalWrite(motor1_B, 0);
+  digitalWrite(motor2_A, 0);
+  digitalWrite(motor2_B, 0);
+}
+
 
 void loading(){
   while (buttonState == 1){
@@ -67,33 +110,37 @@ void loading(){
   digitalWrite(redpin, 1);
   digitalWrite(greenpin, 0);
 
-  digitalWrite(motor1_A, 1);
-  digitalWrite(motor1_B, 0);
+  motor1_left();
   delay(1000);
 
-  digitalWrite(motor1_A, 0);
-  digitalWrite(motor2_A, 1);
-  digitalWrite(motor2_B, 0);
+  motors_stop();
+  motor2_left();
   delay(3000);
 
-  digitalWrite(motor2_A, 0);
-  digitalWrite(motor1_A, 0);
-  digitalWrite(motor1_B, 1);
+  motors_stop();
+  motor1_right();
   delay(3000);
 
-  digitalWrite(motor1_B, 0);
-  digitalWrite(motor2_A, 0);
-  digitalWrite(motor2_B, 1);
+  motors_stop();
+  motor2_right();
   delay(3000);
 
-  digitalWrite(motor2_B, 0);
-  digitalWrite(motor1_A, 1);
-  digitalWrite(motor1_B, 0);
+  motors_stop();
+  motor1_left();
   delay(1000);
 
-  digitalWrite(motor1_A, 0);
+  motors_stop();
+  Serial.println("loading end");
 
-  Serial.println("loading end")
+  while (Serial.available() < 0){
+    digitalWrite(redpin, 1);
+    digitalWrite(greenpin, 0);
+  }
+  min_key = Serial.readString().toInt();
+
+  stepper.step(133*(min_key - loaded_key));
+
+  
   digitalWrite(redpin, 0);
   digitalWrite(greenpin, 1);
 }
@@ -103,6 +150,10 @@ void unloading(){
   digitalWrite(redpin, 1);
   digitalWrite(greenpin, 0);
 
+  stepper.step(133*(right_key - current_key));
+
+  delay(500);
+
   digitalWrite(motor1_A, 1);
   digitalWrite(motor1_B, 0);
   delay(1000);
@@ -129,7 +180,15 @@ void unloading(){
 
   digitalWrite(motor1_A, 0);
 
-  Serial.println("unloading end")
+  
+
+  Serial.println("unloading end");
   digitalWrite(redpin, 0);
   digitalWrite(greenpin, 1);
+}
+
+void yield(){
+  if (digitalRead(button)){
+    exit(0);
+  }
 }
