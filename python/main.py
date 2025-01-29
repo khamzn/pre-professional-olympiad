@@ -50,14 +50,16 @@ def scan_qr_code():
 def process_qr_code(data, table):
     global wait_car
     if data in table.values():
-        con_arduino.post('unloading', ser)
-
         right_key = next(key for key, value in table.items() if value == data)
-        table[right_key] = ' '
+        
+        con_arduino.post('unloading', ser)
+        con_arduino.post(right_key, ser)
 
         while True:
             if con_arduino.get(ser) == 'unloading end':
                 break
+
+        table[right_key] = ' '
 
         con_arduino.post('green',ser)
 
