@@ -53,7 +53,14 @@ def process_qr_code(data, table):
         right_key = next(key for key, value in table.items() if value == data)
         
         con_arduino.post('unloading', ser)
+        
         con_arduino.post(right_key, ser)
+        
+        if ' ' in table.values():
+            min_key = min(key for key, value in table.items() if value == ' ')
+            con_arduino.post(min_key, ser)
+        else:
+            con_arduino.post(6, ser)
 
         while True:
             if con_arduino.get(ser) == 'unloading end':
