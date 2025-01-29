@@ -73,16 +73,21 @@ def process_qr_code(data, table):
         wait_car = True
 
     elif not(wait_car):
-        con_arduino.post('loading', ser)
+        
 
         if ' ' in table.values():
+            con_arduino.post('loading', ser)
             min_key = min(key for key, value in table.items() if value == ' ')
             print(f'min slot : {min_key}')
+            con_arduino.post(min_key, ser)
             table[min_key] = data
             while True:
 
-                if cv2.waitKey(1) & 0xFF == ord('q'):
+                if con_arduino.get(ser) == 'loading eng':
                     break
+
+            min_key = min(key for key, value in table.items() if value == ' ')
+            con_arduino.post(min_key, ser)
         else:
             print('нет свободных мест')
             con_arduino.post('red', ser)
