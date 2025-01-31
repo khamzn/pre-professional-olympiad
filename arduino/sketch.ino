@@ -18,13 +18,16 @@ int redpinState;
 int greenpinState;
 
 String data;
-int loaded_key;
-int right_key;
-int current_key;
-int min_key;
+String right_key = "000";
+String current_key = "001";
+String loaded_key = "002";
+String min_key = "003";
+int current_key_int;
+int right_key_int;
+int loaded_key_int;
+int min_key_int;
 
-
-void setup(){
+void setup() {
   Serial.begin(9600);
   stepper.setSpeed(1000);
   
@@ -37,38 +40,53 @@ void setup(){
   pinMode(redpin, OUTPUT);
   pinMode(greenpin, OUTPUT);
 }
-
-void loop(){
-  buttonState = digitalRead(button);
-
+void loop() {
   if (Serial.available() > 0) {
-    data = Serial.readString();
-  }
+    String data = Serial.readStringUntil('\n');
+    
+    
 
-  if (data == "loading"){
-    loaded_key = Serial.readString().toInt();
-    loading();
-  }
 
-  if (data == "unloading"){
-    right_key = Serial.readString().toInt();
-    current_key = Serial.readString().toInt();
-    unloading();
-  }
 
-  if (data == "red"){
-    redpinState = 1;
-    greenpinState = 0;
-  }
-  if (data == "green"){
-    redpinState = 0;
-    greenpinState = 1;
+    Serial.print("You sent me: ");
+    Serial.println(data);
+    if (data == "unloading"){
+      delay(50);
+      String right_key = Serial.readStringUntil('\n');
+      String current_key = Serial.readStringUntil('\n');
+      right_key_int = right_key.toInt();
+      current_key_int = current_key.toInt();
+      Serial.println(right_key_int);
+      Serial.println(current_key_int); 
+      unloading();
+    }
+    
+    if (data == "loading"){
+      delay(50);
+      String loaded_key = Serial.readStringUntil('\n');
+      String min_key = Serial.readStringUntil('\n');
+      loaded_key_int = loaded_key.toInt();
+      min_key_int = min_key.toInt();
+      Serial.println(loaded_key_int);
+      Serial.println(min_key_int); 
+      loading();
+    }
+
+    if (data == "red"){
+      redpinState = 1;
+      greenpinState = 0;
+    }
+    if (data == "green"){
+      redpinState = 0;
+      greenpinState = 1;
+    }
+      
   }
 
   digitalWrite(redpin, redpinState);
   digitalWrite(greenpin, greenpinState);
+  
 }
-
 
 void motor1_left(){
   digitalWrite(motor1_A, 1);
@@ -136,10 +154,10 @@ void loading(){
     digitalWrite(redpin, 1);
     digitalWrite(greenpin, 0);
   }
-  min_key = Serial.readString().toInt();
+  String min_key = Serial.readStringUntil('\n');
+  min_key_int = min_key.toInt();
 
-  stepper.step(133*(min_key - loaded_key));
-
+  stepper.step(133*(min_key_int - loaded_key_int));
   
   digitalWrite(redpin, 0);
   digitalWrite(greenpin, 1);
@@ -147,10 +165,12 @@ void loading(){
 
 
 void unloading(){
+  Serial.println(right_key_int);
+  Serial.println(current_key_int);
   digitalWrite(redpin, 1);
   digitalWrite(greenpin, 0);
 
-  stepper.step(133*(right_key - current_key));
+  stepper.step(133*(right_key_int - current_key_int));
 
   delay(500);
 
@@ -188,7 +208,7 @@ void unloading(){
 }
 
 void yield(){
-  if (digitalRead(button)){
+  if (digitalRead(button)==0){
     exit(0);
   }
 }
