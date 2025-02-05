@@ -4,8 +4,9 @@ import con_arduino
 
 cap = cv2.VideoCapture(0)
 detector = cv2.QRCodeDetector()
-ser = con_arduino.initialization('dev/ttyUSB0')
+ser = con_arduino.initialization('COM8')
 wait_car = False
+ceff = 2600
 
 
 def load_table():
@@ -54,17 +55,17 @@ def process_qr_code(data, table):
         
         con_arduino.post('unloading', ser)
         
-        con_arduino.post(right_key, ser)
-        
         if ' ' in table.values():
             min_key = min(key for key, value in table.items() if value == ' ')
-            con_arduino.post(min_key, ser)
         else:
-            con_arduino.post(6, ser)
+            min_key = 6
+
+        con_arduino.post(ceff*(right_key - min_key), ser)
 
         while True:
-            if con_arduino.get(ser) == 'unloading end':
+            if con_arduino.get(ser) == "unloading end":
                 break
+            print(con_arduino.get(ser))
 
         table[right_key] = ' '
 
@@ -77,17 +78,23 @@ def process_qr_code(data, table):
 
         if ' ' in table.values():
             con_arduino.post('loading', ser)
-            min_key = min(key for key, value in table.items() if value == ' ')
-            print(f'min slot : {min_key}')
-            con_arduino.post(min_key, ser)
-            table[min_key] = data
-            while True:
+            min_key1 = min(key for key, value in table.items() if value == ' ')
+            print(f'min slot : {min_key1}')
+            table[min_key1] = data
+            if ' ' in table.values():
+                min_key2 = min(key for key, value in table.items() if value == ' ')
+                con_arduino.post(ceff * (min_key2 - min_key1), ser)
+            else:
+                con_arduino.post(0,ser)
+                con_arduino.post("red",ser)
 
-                if con_arduino.get(ser) == 'loading eng':
+
+            while True:
+                if con_arduino.get(ser) == "loading end":
                     break
 
-            min_key = min(key for key, value in table.items() if value == ' ')
-            con_arduino.post(min_key, ser)
+            con_arduino.post("green", ser)
+
         else:
             print('нет свободных мест')
             con_arduino.post('red', ser)
