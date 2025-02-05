@@ -84,6 +84,7 @@ def process_qr_code(data, table):
             if ' ' in table.values():
                 min_key2 = min(key for key, value in table.items() if value == ' ')
                 con_arduino.post(ceff * (min_key2 - min_key1), ser)
+                con_arduino.post("green", ser)
             else:
                 con_arduino.post(0,ser)
                 con_arduino.post("red",ser)
@@ -92,8 +93,6 @@ def process_qr_code(data, table):
             while True:
                 if con_arduino.get(ser) == "loading end":
                     break
-
-            con_arduino.post("green", ser)
 
         else:
             print('нет свободных мест')
